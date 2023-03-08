@@ -3,7 +3,6 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 
 import jax
-import jax.experimental.host_callback as hcb
 import numpy as np
 import jax.numpy as jnp
 import jax.random as random
@@ -12,16 +11,25 @@ import blackjax
 
 
 # cf https://blackjax-devs.github.io/blackjax/examples/howto_other_frameworks.html
+# and https://jax.readthedocs.io/en/latest/notebooks/external_callbacks.html
 
 
 def model_wrapper(model):
     @jax.custom_vjp
     def logp(theta):
-        return hcb.call(lambda x: model.log_density(x), theta, result_shape=1.0)
+        return jax.pure_callback(
+            lambda x: np.array(model.log_density(x)),
+            np.array(1.0),
+            theta,
+        )
+
+    def lopg_fwd_internal(theta):
+        lp, grad = model.log_density_gradient(theta)
+        return np.array(lp), grad
 
     def logp_fwd(theta):
-        lp, grad = hcb.call(
-            lambda x: model.log_density_gradient(x), theta, result_shape=(1.0, theta)
+        lp, grad = jax.pure_callback(
+            lopg_fwd_internal, (np.array(1.0), theta), theta, vectorized=False
         )
 
         return lp, (grad,)
@@ -40,9 +48,9 @@ model = bridgestan.StanModel(
 M = 10
 logp = model_wrapper(model)
 
-
 print(jax.grad(logp)(np.arange(0.0, M)))
-# print(jax.jit(logp)(np.arange(0.0, M)))
+print(jax.jit(logp)(np.arange(0.0, M)))
+print(jax.jit(jax.vmap(logp))(np.arange(0.0, M*3).reshape(3,M)))
 
 
 def other_logp(theta):
