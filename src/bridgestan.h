@@ -22,7 +22,7 @@ typedef int bool;
  * @return pointer to constructed model or `nullptr` if construction
  * fails
  */
-bs_model_rng* bs_construct(char* data_file, unsigned int seed,
+__declspec(dllexport) bs_model_rng* bs_construct(char* data_file, unsigned int seed,
                            unsigned int chain_id);
 
 /**
@@ -33,7 +33,7 @@ bs_model_rng* bs_construct(char* data_file, unsigned int seed,
  * @return 0 for success and -1 if there is an exception freeing one
  * of the model components.
  */
-int bs_destruct(bs_model_rng* mr);
+__declspec(dllexport) int bs_destruct(bs_model_rng* mr);
 
 /**
  * Return the name of the specified model as a C-style string.
@@ -44,7 +44,7 @@ int bs_destruct(bs_model_rng* mr);
  * @param[in] mr pointer to model and RNG structure
  * @return name of model
  */
-const char* bs_name(bs_model_rng* mr);
+__declspec(dllexport) const char* bs_name(bs_model_rng* mr);
 
 /**
  * Return information about the compiled model as a C-style string.
@@ -56,7 +56,7 @@ const char* bs_name(bs_model_rng* mr);
  * @return Information about the model including Stan version, Stan defines, and
  * compiler flags.
  */
-const char* bs_model_info(bs_model_rng* mr);
+__declspec(dllexport) const char* bs_model_info(bs_model_rng* mr);
 
 /**
  * Return a comma-separated sequence of indexed parameter names,
@@ -77,7 +77,7 @@ const char* bs_model_info(bs_model_rng* mr);
  * @param[in] include_gq `true` to include generated quantities
  * @return CSV-separated, indexed, parameter names
  */
-const char* bs_param_names(bs_model_rng* mr, bool include_tp, bool include_gq);
+__declspec(dllexport) const char* bs_param_names(bs_model_rng* mr, bool include_tp, bool include_gq);
 
 /**
  * Return a comma-separated sequence of unconstrained parameters.
@@ -96,7 +96,7 @@ const char* bs_param_names(bs_model_rng* mr, bool include_tp, bool include_gq);
  * @param[in] mr pointer to model and RNG structure
  * @return CSV-separated, indexed, unconstrained parameter names
  */
-const char* bs_param_unc_names(bs_model_rng* mr);
+__declspec(dllexport) const char* bs_param_unc_names(bs_model_rng* mr);
 
 /**
  * Return the number of scalar parameters, optionally including the
@@ -108,7 +108,7 @@ const char* bs_param_unc_names(bs_model_rng* mr);
  * @param[in] include_gq `true` to include generated quantities
  * @return number of parameters
  */
-int bs_param_num(bs_model_rng* mr, bool include_tp, bool include_gq);
+__declspec(dllexport) int bs_param_num(bs_model_rng* mr, bool include_tp, bool include_gq);
 
 /**
  * Return the number of unconstrained parameters.  The number of
@@ -119,7 +119,7 @@ int bs_param_num(bs_model_rng* mr, bool include_tp, bool include_gq);
  * @param[in] mr pointer to model and RNG structure
  * @return number of unconstrained parameters
  */
-int bs_param_unc_num(bs_model_rng* mr);
+__declspec(dllexport) int bs_param_unc_num(bs_model_rng* mr);
 
 /**
  * Set the sequence of constrained parameters based on the specified
@@ -137,7 +137,7 @@ int bs_param_unc_num(bs_model_rng* mr);
  * @return code 0 if successful and code -1 if there is an exception
  * in the underlying Stan code
  */
-int bs_param_constrain(bs_model_rng* mr, bool include_tp, bool include_gq,
+__declspec(dllexport) int bs_param_constrain(bs_model_rng* mr, bool include_tp, bool include_gq,
                        const double* theta_unc, double* theta);
 
 /**
@@ -153,7 +153,7 @@ int bs_param_constrain(bs_model_rng* mr, bool include_tp, bool include_gq,
  * @return code 0 if successful and code -1 if there is an exception
  * in the underlying Stan code
  */
-int bs_param_unconstrain(bs_model_rng* mr, const double* theta,
+__declspec(dllexport) int bs_param_unconstrain(bs_model_rng* mr, const double* theta,
                          double* theta_unc);
 
 /**
@@ -170,7 +170,7 @@ int bs_param_unconstrain(bs_model_rng* mr, const double* theta,
  * @return code 0 if successful and code -1 if there is an exception
  * in the underlying Stan code
  */
-int bs_param_unconstrain_json(bs_model_rng* mr, const char* json,
+__declspec(dllexport) int bs_param_unconstrain_json(bs_model_rng* mr, const char* json,
                               double* theta_unc);
 
 /**
@@ -188,7 +188,7 @@ int bs_param_unconstrain_json(bs_model_rng* mr, const char* json,
  * @return code 0 if successful and code -1 if there is an exception
  * in the underlying Stan code
  */
-int bs_log_density(bs_model_rng* mr, bool propto, bool jacobian,
+__declspec(dllexport) int bs_log_density(bs_model_rng* mr, bool propto, bool jacobian,
                    const double* theta, double* lp);
 
 /**
@@ -210,7 +210,7 @@ int bs_log_density(bs_model_rng* mr, bool propto, bool jacobian,
  * @return code 0 if successful and code -1 if there is an exception
  * in the underlying Stan code
  */
-int bs_log_density_gradient(bs_model_rng* mr, bool propto, bool jacobian,
+__declspec(dllexport) int bs_log_density_gradient(bs_model_rng* mr, bool propto, bool jacobian,
                             const double* theta, double* val, double* grad);
 
 /**
@@ -235,7 +235,7 @@ int bs_log_density_gradient(bs_model_rng* mr, bool propto, bool jacobian,
  * @return code 0 if successful and code -1 if there is an exception
  * in the underlying Stan code
  */
-int bs_log_density_hessian(bs_model_rng* mr, bool propto, bool jacobian,
+__declspec(dllexport) int bs_log_density_hessian(bs_model_rng* mr, bool propto, bool jacobian,
                            const double* theta, double* val, double* grad,
                            double* hessian);
 
