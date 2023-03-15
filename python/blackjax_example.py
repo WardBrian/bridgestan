@@ -34,8 +34,8 @@ def model_wrapper(model):
 
         return lp, (grad,)
 
-    def logp_bwd(res, _):
-        return res
+    def logp_bwd(res, g):
+        return (res[0] * g,)
 
     logp.defvjp(logp_fwd, logp_bwd)
 
