@@ -13,10 +13,10 @@ pub enum BridgeStanError {
     StringEncodeError(#[from] NulError),
     #[error("failed to decode string to UTF8")]
     StringDecodeError(#[from] Utf8Error),
-    #[error("failed to allocate model_rng")]
-    AllocateFailedError,
-    #[error("failed evaluate function, see C stderr")]
-    EvaluationFailed,
+    #[error("failed to construct model: {0}")]
+    ConstructFailedError(String),
+    #[error("failed during evaluation: {0}")]
+    EvaluationFailed(String),
 }
 
 pub fn open_library(path: &std::path::Path) -> Result<ffi::Bridgestan, libloading::Error> {
@@ -45,15 +45,26 @@ impl<'lib> StanModel<'lib> {
     ) -> Result<Self, BridgeStanError> {
         let data = CString::new(path)?.into_raw();
 
-        let model = unsafe { lib.bs_construct(data, seed, chain_id) };
+        let mut err: *mut std::os::raw::c_char = std::ptr::null_mut();
+
+        let model = unsafe { lib.bs_construct(data, seed, chain_id, &mut err) };
 
         // retake pointer to free memory
         let _ = unsafe { CString::from_raw(data) };
 
         if model.is_null() {
-            return Err(BridgeStanError::AllocateFailedError);
+            if err.is_null() {
+                Err(BridgeStanError::ConstructFailedError(
+                    "Unknown error".to_string(),
+                ))
+            } else {
+                let error_text = String::from(unsafe { CStr::from_ptr(err) }.to_str()?);
+                unsafe { lib.bs_free_error_msg(err) };
+                Err(BridgeStanError::ConstructFailedError(error_text))
+            }
+        } else {
+            Ok(StanModel { model, lib })
         }
-        Ok(StanModel { model, lib })
     }
 
     /// Return the name of the model or error if UTF decode fails
@@ -102,6 +113,8 @@ impl<'lib> StanModel<'lib> {
         );
 
         let mut val = 0.0;
+
+        let mut err: *mut std::os::raw::c_char = std::ptr::null_mut();
         let rc = unsafe {
             self.lib.bs_log_density_gradient(
                 self.model,
@@ -110,13 +123,14 @@ impl<'lib> StanModel<'lib> {
                 theta.as_ptr(),
                 &mut val,
                 out.as_mut_ptr(),
+                &mut err,
             )
         };
 
         if rc == 0 {
             Ok((val, out))
         } else {
-            Err(BridgeStanError::EvaluationFailed)
+            Err(self.handle_error(err))
         }
     }
 
@@ -140,6 +154,7 @@ impl<'lib> StanModel<'lib> {
             "Argument 'out' must be the same size as the number of parameters!"
         );
 
+        let mut err: *mut std::os::raw::c_char = std::ptr::null_mut();
         let rc = unsafe {
             self.lib.bs_param_constrain(
                 self.model,
@@ -147,25 +162,36 @@ impl<'lib> StanModel<'lib> {
                 include_gq as i32,
                 theta_unc.as_ptr(),
                 out.as_mut_ptr(),
+                &mut err,
             )
         };
 
         if rc == 0 {
             Ok(out)
         } else {
-            Err(BridgeStanError::EvaluationFailed)
+            Err(self.handle_error(err))
         }
     }
 
     // etc, need more functions
+
+    fn handle_error(&self, error: *mut std::os::raw::c_char) -> BridgeStanError {
+        if error.is_null() {
+            return BridgeStanError::EvaluationFailed("Unknown error".to_string());
+        }
+        let error_text = unsafe { CStr::from_ptr(error) }.to_str().map(String::from);
+        unsafe { self.lib.bs_free_error_msg(error) };
+        match error_text {
+            Ok(s) => BridgeStanError::EvaluationFailed(s),
+            Err(_) => BridgeStanError::EvaluationFailed("Unknown error".to_string()),
+        }
+    }
 }
 
 impl<'lib> Drop for StanModel<'lib> {
-    /// Free the memory allocated in C++. Panics if deallocation fails
+    /// Free the memory allocated in C++.
     fn drop(&mut self) {
-        if unsafe { self.lib.bs_destruct(self.model) } != 0 {
-            panic!("Deallocating model_rng failed")
-        }
+        unsafe { self.lib.bs_destruct(self.model) }
     }
 }
 
@@ -175,7 +201,7 @@ use nuts_rs::{CpuLogpFunc, LogpError};
 #[cfg(feature = "nuts")]
 impl LogpError for BridgeStanError {
     fn is_recoverable(&self) -> bool {
-        return *self == BridgeStanError::EvaluationFailed;
+        !matches!(self, BridgeStanError::EvaluationFailed(_))
     }
 }
 
