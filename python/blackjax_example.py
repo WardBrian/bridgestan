@@ -14,7 +14,7 @@ import blackjax
 # and https://jax.readthedocs.io/en/latest/notebooks/external_callbacks.html
 
 
-def model_wrapper(model):
+def logp_wrapper(model):
     @jax.custom_vjp
     def logp(theta):
         return jax.pure_callback(
@@ -42,11 +42,31 @@ def model_wrapper(model):
     return logp
 
 
+
+
+def constrain_wrapper(model):
+    retval = np.zeros(model.param_num(include_gq=True))
+
+    def constrain_internal(theta, key):
+        rng = model.new_rng(key[0])
+        return model.param_constrain(theta, include_gq=True, rng=rng)
+
+    def constrain(theta, key):
+        return jax.pure_callback(
+            constrain_internal,
+            retval,
+            theta,
+            key
+        )
+
+    return constrain
+
+
 model = bridgestan.StanModel(
     "./test_models/multi/multi_model.so", "./test_models/multi/multi.data.json"
 )
 M = 10
-logp = model_wrapper(model)
+logp = logp_wrapper(model)
 
 print(jax.grad(logp)(np.arange(0.0, M)))
 print(jax.jit(logp)(np.arange(0.0, M)))
@@ -79,3 +99,22 @@ for i in range(N):
 
 print(out.mean(axis=0))
 print(out.var(axis=0, ddof=1))
+
+
+# vmap over param constrain
+
+model2 = bridgestan.StanModel(
+    "./test_models/bernoulli/bernoulli_model.so", "./test_models/bernoulli/bernoulli.data.json")
+
+key = random.PRNGKey(1)
+theta = np.array([0.0]) # 0.5 on the constrained scale
+keys = random.split(key, 100)
+constrain = constrain_wrapper(model2)
+# reuse same parameter value
+out = jax.vmap(constrain, (None,0))(theta, keys)
+print(out)
+print(out.sum(axis=0)[1] / 100) # should be approximate 0.5
+
+thetas = np.arange(-50,50) / 10 # pretty spread out on unconstrained scale
+out2 = jax.vmap(constrain, (0,0))(thetas, keys)
+print(out2)
