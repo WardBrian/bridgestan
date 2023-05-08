@@ -8,7 +8,7 @@ on:
   workflow_dispatch: {}
 
 env:
-  CACHE_VERSION: 0
+  CACHE_VERSION: 2
 
 jobs:
   build:
@@ -55,13 +55,13 @@ jobs:
       - name: Build test models (Unix)
         if: matrix.os != 'windows-latest' && steps.test-models.outputs.cache-hit != 'true'
         run: |
-          make STAN_THREADS=true O=0 test_models -j2
+          make STAN_THREADS=true test_models -j2
         shell: bash
 
       - name: Build test models (Windows)
         if: matrix.os == 'windows-latest' && steps.test-models.outputs.cache-hit != 'true'
         run: |
-          mingw32-make.exe STAN_THREADS=true O=0 test_models -j2
+          mingw32-make.exe STAN_THREADS=true test_models -j2
         shell: pwsh
 
   python:
