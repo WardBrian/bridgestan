@@ -256,6 +256,10 @@ class StanModel:
             star_star_char,
         ]
 
+        self._set_threadpool_size = self.stanlib.bs_set_threadpool_size
+        self._set_threadpool_size.restype = ctypes.c_int
+        self._set_threadpool_size.argtypes = [ctypes.c_int, star_star_char]
+
         self._destruct = self.stanlib.bs_model_destruct
         self._destruct.restype = None
         self._destruct.argtypes = [ctypes.c_void_p]

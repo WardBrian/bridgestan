@@ -364,6 +364,8 @@ BS_PUBLIC void bs_rng_destruct(bs_rng* rng);
  */
 BS_PUBLIC int bs_set_print_callback(STREAM_CALLBACK callback, char** error_msg);
 
+BS_PUBLIC int bs_set_threadpool_size(int n, char** error_msg);
+
 #ifdef __cplusplus
 }
 #endif

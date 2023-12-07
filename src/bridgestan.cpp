@@ -280,3 +280,27 @@ int bs_set_print_callback(STREAM_CALLBACK callback, char** error_msg) {
   }
   return -1;
 }
+
+int bs_set_threadpool_size(int n, char** error_msg) {
+  try {
+    auto& tbb_config = stan::math::init_threadpool_tbb(n);
+    tbb_config.initialize(n);
+  } catch (const std::exception& e) {
+    if (error_msg) {
+      std::stringstream error;
+      error << "set_threadpool_size() failed with exception: " << e.what()
+            << std::endl;
+      *error_msg = strdup(error.str().c_str());
+    }
+    return -1;
+  } catch (...) {
+    if (error_msg) {
+      std::stringstream error;
+      error << "set_threadpool_size() failed with unknown exception"
+            << std::endl;
+      *error_msg = strdup(error.str().c_str());
+    }
+    return -1;
+  }
+  return 0;
+}
