@@ -288,12 +288,13 @@ class bs_model {
    * @param[in] json JSON string representing parameters
    * @param[in] rng random number generator for unspecified parameters
    * @param[in] init_radius radius to draw initial values from
+   * @param[in] max_tries maximum number of attempts at random initialization
    * @param[in] jacobian whether to use the jacobian when calculating if the log
    * density is finite.
    * @param[out] theta_unc unconstrained parameters generated
    */
   void param_initialize(const char* json, stan::rng_t& rng, double init_radius,
-                        bool jacobian, double* theta_unc) const {
+                        int max_tries, bool jacobian, double* theta_unc) const {
     std::stringstream in(json);
     stan::json::json_data inits_context(in);
     stan::callbacks::writer dummy_writer;
@@ -304,12 +305,12 @@ class bs_model {
     std::vector<double> initial_value;
     if (jacobian) {
       initial_value = stan::services::util::initialize<true>(
-          *model_, inits_context, rng, init_radius, false, logger,
-          dummy_writer);
+          *model_, inits_context, rng, init_radius, false, logger, dummy_writer,
+          max_tries);
     } else {
       initial_value = stan::services::util::initialize<false>(
-          *model_, inits_context, rng, init_radius, false, logger,
-          dummy_writer);
+          *model_, inits_context, rng, init_radius, false, logger, dummy_writer,
+          max_tries);
     }
     std::memcpy(theta_unc, initial_value.data(),
                 sizeof(double) * initial_value.size());

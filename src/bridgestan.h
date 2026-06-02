@@ -242,6 +242,9 @@ BS_PUBLIC int bs_param_unconstrain_json(const bs_model* m, const char* json,
  * in the JSON.
  * @param[in] init_radius The parameters not provided will be drawn uniformly
  * from `[-init_range, init_range]` on the unconstrained scale.
+ * @param[in] max_tries maximum number of attempts at random initialization
+ * @param[in] jacobian whether to use the jacobian when calculating if the log
+ * density is finite.
  * @param[out] theta_unc sequence of unconstrained parameters
  * @param[out] error_msg a pointer to a string that will be allocated if there
  * is an error. This must later be freed by calling \link bs_free_error_msg()
@@ -252,8 +255,8 @@ BS_PUBLIC int bs_param_unconstrain_json(const bs_model* m, const char* json,
  */
 BS_PUBLIC int bs_param_initialize(const bs_model* m, const char* json,
                                   bs_rng* rng, double init_radius,
-                                  bool jacobian, double* theta_unc,
-                                  char** error_msg);
+                                  int max_tries, bool jacobian,
+                                  double* theta_unc, char** error_msg);
 
 /**
  * Set the log density of the specified parameters, dropping

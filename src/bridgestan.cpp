@@ -79,10 +79,11 @@ int bs_param_unconstrain_json(const bs_model* m, const char* json,
 }
 
 int bs_param_initialize(const bs_model* m, const char* json, bs_rng* rng,
-                        double init_radius, bool jacobian, double* theta_unc,
-                        char** error_msg) {
+                        double init_radius, int max_tries, bool jacobian,
+                        double* theta_unc, char** error_msg) {
   return handle_errors("param_initialize", error_msg, [&]() {
-    m->param_initialize(json, rng->rng_, init_radius, jacobian, theta_unc);
+    m->param_initialize(json, rng->rng_, init_radius, max_tries, jacobian,
+                        theta_unc);
     return 0;
   });
 }
