@@ -24,6 +24,7 @@ as well as constraining and unconstraining transforms.
 \item \href{#method-StanModel-new_rng}{\code{StanModel$new_rng()}}
 \item \href{#method-StanModel-param_unconstrain}{\code{StanModel$param_unconstrain()}}
 \item \href{#method-StanModel-param_unconstrain_json}{\code{StanModel$param_unconstrain_json()}}
+\item \href{#method-StanModel-param_initialize}{\code{StanModel$param_initialize()}}
 \item \href{#method-StanModel-log_density}{\code{StanModel$log_density()}}
 \item \href{#method-StanModel-log_density_gradient}{\code{StanModel$log_density_gradient()}}
 \item \href{#method-StanModel-log_density_hessian}{\code{StanModel$log_density_hessian()}}
@@ -278,6 +279,47 @@ The JSON is expected to be in the \href{https://mc-stan.org/docs/cmdstan-guide/j
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{json}}{Character vector containing a string representation of JSON data.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The unconstrained parameters of the model.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-StanModel-param_initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-StanModel-param_initialize}{}}}
+\subsection{Method \code{param_initialize()}}{
+Initialize a point in the unconstrained space, using the specified values
+from JSON and randomizing the others.
+The result will be checked to ensure they achieve a finite
+log density and gradient.
+The JSON is expected to be in the \href{https://mc-stan.org/docs/cmdstan-guide/json_apdx.html}{JSON Format for CmdStan}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{StanModel$param_initialize(
+  rng,
+  json = "{}",
+  init_radius = 2,
+  max_tries = 100,
+  jacobian = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{rng}}{The source of randomness for the unspecified parameters.}
+
+\item{\code{json}}{Character vector containing a string representation of JSON data.}
+
+\item{\code{init_radius}}{The parameters not provided will be drawn uniformly
+from \verb{[-init_range, init_range]} on the unconstrained scale.}
+
+\item{\code{max_tries}}{How many attempts should be made to find a point with finite
+log density.}
+
+\item{\code{jacobian}}{If \code{TRUE}, include change of variables terms for constrained
+parameters when checking for finiteness.}
 }
 \if{html}{\out{</div>}}
 }

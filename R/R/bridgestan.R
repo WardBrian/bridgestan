@@ -317,6 +317,53 @@ StanModel <- R6::R6Class(
       vars$theta_unc
     },
     #' @description
+    #' Initialize a point in the unconstrained space, using the specified values
+    #' from JSON and randomizing the others.
+    #' The result will be checked to ensure they achieve a finite
+    #' log density and gradient.
+    #' The JSON is expected to be in the [JSON Format for CmdStan](https://mc-stan.org/docs/cmdstan-guide/json_apdx.html).
+    #'
+    #' @param rng The source of randomness for the unspecified parameters.
+    #' @param json Character vector containing a string representation of JSON data.
+    #' @param init_radius The parameters not provided will be drawn uniformly
+    #' from `[-init_range, init_range]` on the unconstrained scale.
+    #' @param max_tries How many attempts should be made to find a point with finite
+    #' log density.
+    #' @param jacobian If `TRUE`, include change of variables terms for constrained
+    #' parameters when checking for finiteness.
+    #' @return The unconstrained parameters of the model.
+    param_initialize = function(
+      rng,
+      json = "{}",
+      init_radius = 2.0,
+      max_tries = 100,
+      jacobian = TRUE
+    ) {
+      vars <- .C(
+        "bs_param_initialize_R",
+        as.raw(private$model),
+        as.character(json),
+        as.raw(rng$ptr),
+        as.double(init_radius),
+        as.integer(max_tries),
+        as.logical(jacobian),
+        theta_unc = double(private$unc_dims),
+        return_code = as.integer(0),
+        err_msg = as.character(""),
+        err_ptr = raw(8),
+        PACKAGE = private$lib_name
+      )
+      if (vars$return_code) {
+        stop(handle_error(
+          private$lib_name,
+          vars$err_msg,
+          vars$err_ptr,
+          "param_initialize"
+        ))
+      }
+      vars$theta_unc
+    },
+    #' @description
     #' Return the log density of the specified unconstrained parameters.
     #' @param theta_unc The vector of unconstrained parameters.
     #' @param propto If `TRUE`, drop terms which do not depend on the parameters.
