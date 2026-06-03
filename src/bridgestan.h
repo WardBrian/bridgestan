@@ -229,8 +229,8 @@ BS_PUBLIC int bs_param_unconstrain_json(const bs_model* m, const char* json,
  * Similar to \link bs_param_unconstrain_json() \endlink, but specifically
  * allows for incomplete specifications of the parameters. Any parameter not
  * specified in the provided JSON will be randomized. The result will be checked
- * for a finite log density value, and re-tried a predetermined number of times.
- * If all of these attempts fail, an error will be indicated.
+ * for a finite log density value, and re-tried up to the specified number of
+ * times. If all of these attempts fail, an error will be indicated.
  *
  * The JSON is expected to be in the
  * <a href="https://mc-stan.org/docs/cmdstan-guide/json.html">JSON Format for
