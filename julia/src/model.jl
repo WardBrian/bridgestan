@@ -449,6 +449,89 @@ function param_unconstrain_json(sm::StanModel, theta::String)
     param_unconstrain_json!(sm, theta, out)
 end
 
+
+"""
+    param_initialize!(sm, rng, out, theta=\"{}\"; init_radius=2.0, max_tries=100, jacobian=true)
+
+Similar to [`param_unconstrain_json!`](@ref) but specifically allows for
+incomplete specifications of the parameters. Any parameter not specified
+in the provided JSON will be randomized. The result will be checked for a
+finite log density value, and re-tried up to the specified number of times.
+
+The JSON is expected to be in the [JSON Format for CmdStan](https://mc-stan.org/docs/cmdstan-guide/json_apdx.html).
+
+The result is stored in the vector `out`, and a reference is returned. See
+[`param_initialize`](@ref) for a version which allocates fresh memory.
+"""
+function param_initialize!(
+    sm::StanModel,
+    rng::StanRNG,
+    out::Vector{Float64},
+    theta::String = "{}";
+    init_radius::Float64 = 2.0,
+    max_tries = 100,
+    jacobian::Bool = true,
+)
+    if length(out) != sm.param_unc_num
+        throw(
+            DimensionMismatch(
+                "out must be same size as number of unconstrained parameters",
+            ),
+        )
+    end
+
+    err = Ref{Cstring}()
+    rc = @ccall $(dlsym(sm.lib, :bs_param_initialize))(
+        sm.stanmodel::Ptr{StanModelStruct},
+        theta::Cstring,
+        rng.ptr::Ptr{StanRNGStruct},
+        init_radius::Cdouble,
+        max_tries::Cint,
+        jacobian::Bool,
+        out::Ref{Cdouble},
+        err::Ref{Cstring},
+    )::Cint
+    if rc != 0
+        error(handle_error(sm.lib, err, "param_initialize"))
+    end
+    out
+end
+
+"""
+    param_initialize(sm, rng, theta=\"{}\"; init_radius=2.0, max_tries=100, jacobian=true)
+
+
+Similar to [`param_unconstrain_json`](@ref) but specifically allows for
+incomplete specifications of the parameters. Any parameter not specified
+in the provided JSON will be randomized. The result will be checked for a
+finite log density value, and re-tried up to the specified number of times.
+
+The JSON is expected to be in the [JSON Format for CmdStan](https://mc-stan.org/docs/cmdstan-guide/json_apdx.html).
+
+This allocates new memory for the output each call.
+See [`param_initialize!`](@ref) for a version which allows
+re-using existing memory.
+"""
+function param_initialize(
+    sm::StanModel,
+    rng::StanRNG,
+    theta::String = "{}";
+    init_radius::Float64 = 2.0,
+    max_tries = 100,
+    jacobian::Bool = true,
+)
+    out = zeros(sm.param_unc_num)
+    param_initialize!(
+        sm,
+        rng,
+        out,
+        theta;
+        init_radius = init_radius,
+        max_tries = max_tries,
+        jacobian = jacobian,
+    )
+end
+
 """
     log_density(sm, q; propto=true, jacobian=true)
 
