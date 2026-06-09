@@ -292,8 +292,12 @@ The unconstrained parameters of the model.
 \subsection{Method \code{param_initialize()}}{
 Initialize a point in the unconstrained space, using the specified values
 from JSON and randomizing the others.
-The result will be checked to ensure they achieve a finite
-log density and gradient.
+
+Any parameter not specified in the provided JSON will be randomly selected
+uniformly from \verb{[-init_radius, init_radius)}. The resulting point will be
+checked for a finite log density value, and retried
+up to the specified number of times. If all such retries fail, an error is raised.
+
 The JSON is expected to be in the \href{https://mc-stan.org/docs/cmdstan-guide/json_apdx.html}{JSON Format for CmdStan}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{StanModel$param_initialize(
@@ -313,13 +317,13 @@ The JSON is expected to be in the \href{https://mc-stan.org/docs/cmdstan-guide/j
 \item{\code{json}}{Character vector containing a string representation of JSON data.}
 
 \item{\code{init_radius}}{The parameters not provided will be drawn uniformly
-from \verb{[-init_range, init_range]} on the unconstrained scale.}
+from \verb{[-init_radius, init_radius)} on the unconstrained scale.}
 
-\item{\code{max_tries}}{How many attempts should be made to find a point with finite
-log density.}
+\item{\code{max_tries}}{Maximum number of random initializations considered to find a
+point with finite log density.}
 
 \item{\code{jacobian}}{If \code{TRUE}, include change of variables terms for constrained
-parameters when checking for finiteness.}
+parameters when checking the log density and gradient for finiteness.}
 }
 \if{html}{\out{</div>}}
 }

@@ -227,10 +227,12 @@ BS_PUBLIC int bs_param_unconstrain_json(const bs_model* m, const char* json,
 
 /**
  * Similar to \link bs_param_unconstrain_json() \endlink, but specifically
- * allows for incomplete specifications of the parameters. Any parameter not
- * specified in the provided JSON will be randomized. The result will be checked
- * for a finite log density value, and re-tried up to the specified number of
- * times. If all of these attempts fail, an error will be indicated.
+ * allows for incomplete specifications of the parameters.
+ * Any parameter not specified in the provided JSON will be randomly selected
+ * uniformly from `[-init_radius, init_radius)`. The resulting point will be
+ * checked for a finite log density value, and retried up to the specified
+ * number of times. If all such retries fail, the function will return -1
+ * to indicate an error.
  *
  * The JSON is expected to be in the
  * <a href="https://mc-stan.org/docs/cmdstan-guide/json.html">JSON Format for
@@ -241,7 +243,7 @@ BS_PUBLIC int bs_param_unconstrain_json(const bs_model* m, const char* json,
  * @param[in] rng Random number generator to use for the parameters not provided
  * in the JSON.
  * @param[in] init_radius The parameters not provided will be drawn uniformly
- * from `[-init_range, init_range]` on the unconstrained scale.
+ * from `[-init_radius, init_radius)` on the unconstrained scale.
  * @param[in] max_tries maximum number of attempts at random initialization
  * @param[in] jacobian whether to use the jacobian when calculating if the log
  * density is finite.

@@ -569,9 +569,10 @@ class StanModel:
         """
         Return an array of the unconstrained parameters derived from the
         specified JSON formatted data, allowing for incomplete specifications.
-        If not all parameters are specified in the JSON, the remainder will be
-        randomized. The result will be checked to ensure they achieve a finite
-        log density and gradient.
+        Any parameter not specified in the provided JSON will be randomly selected
+        uniformly from ``[-init_radius, init_radius)``. The resulting point will
+        be checked for a finite log density value, and retried up to the specified
+        number of times. If all such retries fail, an exception is raised.
 
         The JSON is expected to be in the `JSON Format for CmdStan <https://mc-stan.org/docs/cmdstan-guide/json.html>`__.
 
@@ -579,7 +580,7 @@ class StanModel:
         :param theta_json: The JSON encoded constrained parameters or a dictionary
             which will be converted to a JSON string.
         :param init_radius: The parameters not provided will be drawn uniformly
-            from ``[-init_range, init_range]`` on the unconstrained scale.
+            from ``[-init_radius, init_radius)`` on the unconstrained scale.
         :param max_tries: How many attempts should be made to find a point with finite
             log density.
         :param jacobian: ``True`` if change-of-variables terms for constrained

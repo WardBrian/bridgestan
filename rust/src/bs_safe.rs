@@ -708,11 +708,13 @@ impl<T: Borrow<StanLibrary>> Model<T> {
 
     /// Initialize a point in the unconstrained space, using the specified values
     /// from JSON and randomizing the others.
+    /// Any parameter not specified in the provided JSON will be randomly selected
+    /// uniformly from `[-init_radius, init_radius)`. The resulting point will be
+    /// checked for a finite log density value, and retried
+    /// up to the specified number of times. If all such retries fail, an `Err` is returned.
     ///
     /// The JSON is expected to be in the
     /// [JSON Format for CmdStan](https://mc-stan.org/docs/cmdstan-guide/json.html).
-    /// The result will be checked to ensure they achieve a finite
-    /// log density and gradient.
     pub fn param_initialize<S: AsRef<CStr>, R: Borrow<StanLibrary>>(
         &self,
         rng: &mut Rng<R>,

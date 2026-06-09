@@ -324,7 +324,7 @@ See [`StanRNG`](@ref) for details on how to construct RNGs.
 
 This allocates new memory for the output each call.
 See [`param_constrain!`](@ref) for a version which allows
-re-using existing memory.
+reusing existing memory.
 
 This is the inverse of [`param_unconstrain`](@ref).
 """
@@ -392,7 +392,7 @@ If structured input is needed, use [`param_unconstrain_json`](@ref)
 
 This allocates new memory for the output each call.
 See [`param_unconstrain!`](@ref) for a version which allows
-re-using existing memory.
+reusing existing memory.
 
 This is the inverse of [`param_constrain`](@ref).
 """
@@ -442,7 +442,7 @@ The JSON is expected to be in the [JSON Format for CmdStan](https://mc-stan.org/
 
 This allocates new memory for the output each call.
 See [`param_unconstrain_json!`](@ref) for a version which allows
-re-using existing memory.
+reusing existing memory.
 """
 function param_unconstrain_json(sm::StanModel, theta::String)
     out = zeros(sm.param_unc_num)
@@ -453,10 +453,12 @@ end
 """
     param_initialize!(sm, rng, out, theta=\"{}\"; init_radius=2.0, max_tries=100, jacobian=true)
 
-Similar to [`param_unconstrain_json!`](@ref) but specifically allows for
-incomplete specifications of the parameters. Any parameter not specified
-in the provided JSON will be randomized. The result will be checked for a
-finite log density value, and re-tried up to the specified number of times.
+Similar to [`param_unconstrain_json!`](@ref) but allows for
+incomplete specifications of the parameters.
+Any parameter not specified in the provided JSON will be randomly selected
+uniformly from `[-init_radius, init_radius)`. The resulting point will be
+checked for a finite log density value, and retried
+up to the specified number of times. If all such retries fail, an error is raised.
 
 The JSON is expected to be in the [JSON Format for CmdStan](https://mc-stan.org/docs/cmdstan-guide/json_apdx.html).
 
@@ -500,17 +502,18 @@ end
 """
     param_initialize(sm, rng, theta=\"{}\"; init_radius=2.0, max_tries=100, jacobian=true)
 
-
-Similar to [`param_unconstrain_json`](@ref) but specifically allows for
-incomplete specifications of the parameters. Any parameter not specified
-in the provided JSON will be randomized. The result will be checked for a
-finite log density value, and re-tried up to the specified number of times.
+Similar to [`param_unconstrain_json`](@ref) but allows for
+incomplete specifications of the parameters.
+Any parameter not specified in the provided JSON will be randomly selected
+uniformly from `[-init_radius, init_radius)`. The resulting point will be
+checked for a finite log density value, and retried
+up to the specified number of times. If all such retries fail, an error is raised.
 
 The JSON is expected to be in the [JSON Format for CmdStan](https://mc-stan.org/docs/cmdstan-guide/json_apdx.html).
 
 This allocates new memory for the output each call.
 See [`param_initialize!`](@ref) for a version which allows
-re-using existing memory.
+reusing existing memory.
 """
 function param_initialize(
     sm::StanModel,
@@ -619,7 +622,7 @@ and includes change of variables terms for constrained parameters if `jacobian` 
 
 This allocates new memory for the gradient output each call.
 See [`log_density_gradient!`](@ref) for a version which allows
-re-using existing memory.
+reusing existing memory.
 """
 function log_density_gradient(
     sm::StanModel,
@@ -697,7 +700,7 @@ and includes change of variables terms for constrained parameters if `jacobian` 
 
 This allocates new memory for the gradient and Hessian output each call.
 See [`log_density_hessian!`](@ref) for a version which allows
-re-using existing memory.
+reusing existing memory.
 """
 function log_density_hessian(
     sm::StanModel,
@@ -774,7 +777,7 @@ This calculation drops constant terms that do not depend on the parameters if `p
 and includes change of variables terms for constrained parameters if `jacobian` is `true`.
 
 This allocates new memory for the output each call. See
-[`log_density_hessian_vector_product!`](@ref) for a version which allows re-using
+[`log_density_hessian_vector_product!`](@ref) for a version which allows reusing
 existing memory.
 """
 function log_density_hessian_vector_product(

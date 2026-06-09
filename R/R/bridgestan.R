@@ -319,18 +319,22 @@ StanModel <- R6::R6Class(
     #' @description
     #' Initialize a point in the unconstrained space, using the specified values
     #' from JSON and randomizing the others.
-    #' The result will be checked to ensure they achieve a finite
-    #' log density and gradient.
+    #'
+    #' Any parameter not specified in the provided JSON will be randomly selected
+    #' uniformly from `[-init_radius, init_radius)`. The resulting point will be
+    #' checked for a finite log density value, and retried
+    #' up to the specified number of times. If all such retries fail, an error is raised.
+    #'
     #' The JSON is expected to be in the [JSON Format for CmdStan](https://mc-stan.org/docs/cmdstan-guide/json_apdx.html).
     #'
     #' @param rng The source of randomness for the unspecified parameters.
     #' @param json Character vector containing a string representation of JSON data.
     #' @param init_radius The parameters not provided will be drawn uniformly
-    #' from `[-init_range, init_range]` on the unconstrained scale.
-    #' @param max_tries How many attempts should be made to find a point with finite
-    #' log density.
+    #' from `[-init_radius, init_radius)` on the unconstrained scale.
+    #' @param max_tries Maximum number of random initializations considered to find a
+    #' point with finite log density.
     #' @param jacobian If `TRUE`, include change of variables terms for constrained
-    #' parameters when checking for finiteness.
+    #' parameters when checking the log density and gradient for finiteness.
     #' @return The unconstrained parameters of the model.
     param_initialize = function(
       rng,
