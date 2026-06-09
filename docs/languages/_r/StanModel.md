@@ -342,6 +342,48 @@ The unconstrained parameters of the model.
 
  
 
+##### Method `param_initialize()`
+
+Initialize a point in the unconstrained space, using the specified values from JSON and randomizing the others.
+
+Any parameter not specified in the provided JSON will be randomly selected uniformly from `[-init_radius, init_radius)`. The resulting point will be checked for a finite log density value, and retried up to the specified number of times. If all such retries fail, an error is raised.
+
+The JSON is expected to be in the [JSON Format for CmdStan](https://mc-stan.org/docs/cmdstan-guide/json_apdx.html).
+
+###### Usage
+
+```
+StanModel$param_initialize(
+  rng,
+  json = "{}",
+  init_radius = 2,
+  max_tries = 100,
+  jacobian = TRUE
+)
+```
+
+ 
+
+###### Arguments
+
+- **`rng`**: The source of randomness for the unspecified parameters.
+- **`json`**: Character vector containing a string representation of JSON data.
+- **`init_radius`**: The parameters not provided will be drawn uniformly from `[-init_radius, init_radius)` on the unconstrained scale.
+- **`max_tries`**: Maximum number of random initializations considered to find a point with finite log density.
+- **`jacobian`**: If `TRUE`, include change of variables terms for constrained parameters when checking the log density and gradient for finiteness.
+
+ 
+
+###### Returns
+
+The unconstrained parameters of the model.
+
+ 
+
+ 
+
+ 
+
 ##### Method `log_density()`
 
 Return the log density of the specified unconstrained parameters.

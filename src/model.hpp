@@ -7,6 +7,9 @@
 #include <stan/io/var_context.hpp>
 #include <stan/model/model_base.hpp>
 #include <stan/services/util/create_rng.hpp>
+#include <stan/callbacks/stream_logger.hpp>
+#include <stan/callbacks/writer.hpp>
+#include <stan/services/util/initialize.hpp>
 #ifdef BRIDGESTAN_AD_HESSIAN
 #include <stan/math/mix.hpp>
 #endif
@@ -276,6 +279,44 @@ class bs_model {
   }
 
   /**
+   * Initialize the parameters for the model by using the values specified as a
+   * JSON string, randomizing the rest, and writing into the specified
+   * unconstrained parameter array. Checks to make sure the generated values
+   * produce a finite log_density, and tries again several times if they do not.
+   * See the CmdStan Reference Manual for details of the JSON schema.
+   *
+   * @param[in] json JSON string representing parameters
+   * @param[in] rng random number generator for unspecified parameters
+   * @param[in] init_radius radius to draw initial values from
+   * @param[in] max_tries maximum number of attempts at random initialization
+   * @param[in] jacobian whether to use the jacobian when calculating if the log
+   * density is finite.
+   * @param[out] theta_unc unconstrained parameters generated
+   */
+  void param_initialize(const char* json, stan::rng_t& rng, double init_radius,
+                        int max_tries, bool jacobian, double* theta_unc) const {
+    std::stringstream in(json);
+    stan::json::json_data inits_context(in);
+    stan::callbacks::writer dummy_writer;
+    stan::callbacks::stream_logger logger{*outstream, *outstream, *outstream,
+                                          *outstream, *outstream};
+
+    BRIDGESTAN_PREPARE_AD_FOR_THREADING();
+    std::vector<double> initial_value;
+    if (jacobian) {
+      initial_value = stan::services::util::initialize<true>(
+          *model_, inits_context, rng, init_radius, false, logger, dummy_writer,
+          max_tries);
+    } else {
+      initial_value = stan::services::util::initialize<false>(
+          *model_, inits_context, rng, init_radius, false, logger, dummy_writer,
+          max_tries);
+    }
+    std::memcpy(theta_unc, initial_value.data(),
+                sizeof(double) * initial_value.size());
+  }
+
+  /**
    * Constrain the specified unconstrained parameters into the
    * specified array, optionally including transformed parameters
    * and generated quantities as specified.
@@ -284,6 +325,7 @@ class bs_model {
    * @param[in] include_gq `true` to include generated quantities
    * @param[in] theta_unc unconstrained parameters to constrain
    * @param[out] theta constrained parameters generated
+   * @param[in] rng random number generator for generated quantities
    */
   void param_constrain(bool include_tp, bool include_gq,
                        const double* theta_unc, double* theta,

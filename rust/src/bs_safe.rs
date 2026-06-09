@@ -705,6 +705,49 @@ impl<T: Borrow<StanLibrary>> Model<T> {
             Err(BridgeStanError::EvaluationFailed(err.message()))
         }
     }
+
+    /// Initialize a point in the unconstrained space, using the specified values
+    /// from JSON and randomizing the others.
+    /// Any parameter not specified in the provided JSON will be randomly selected
+    /// uniformly from `[-init_radius, init_radius)`. The resulting point will be
+    /// checked for a finite log density value, and retried
+    /// up to the specified number of times. If all such retries fail, an `Err` is returned.
+    ///
+    /// The JSON is expected to be in the
+    /// [JSON Format for CmdStan](https://mc-stan.org/docs/cmdstan-guide/json.html).
+    pub fn param_initialize<S: AsRef<CStr>, R: Borrow<StanLibrary>>(
+        &self,
+        rng: &mut Rng<R>,
+        json: S,
+        init_radius: f64,
+        max_tries: i32,
+        jacobian: bool,
+        theta_unc: &mut [f64],
+    ) -> Result<()> {
+        assert_eq!(
+            theta_unc.len(),
+            self.param_unc_num(),
+            "Argument 'theta_unc' must be the same size as the number of parameters!"
+        );
+        let mut err = ErrorMsg::new(self.lib.borrow());
+        let rc = unsafe {
+            self.ffi_lib().bs_param_initialize(
+                self.model.as_ptr(),
+                json.as_ref().as_ptr(),
+                rng.rng.as_ptr(),
+                init_radius,
+                max_tries,
+                jacobian,
+                theta_unc.as_mut_ptr(),
+                err.as_ptr(),
+            )
+        };
+        if rc == 0 {
+            Ok(())
+        } else {
+            Err(BridgeStanError::EvaluationFailed(err.message()))
+        }
+    }
 }
 
 impl<T: Borrow<StanLibrary> + Clone> Model<T> {

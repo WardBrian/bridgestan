@@ -311,6 +311,33 @@ def test_param_unconstrain_json():
         bridge.param_unconstrain_json(theta_json, out=scratch_bad)
 
 
+def test_param_initialize():
+    gaussian_so = STAN_FOLDER / "gaussian" / "gaussian_model.so"
+    gaussian_data = STAN_FOLDER / "gaussian" / "gaussian.data.json"
+    bridge = bs.StanModel(gaussian_so, gaussian_data)
+    rng = bridge.new_rng(1234)
+
+    theta_unc = np.array([0.2, np.log(1.9)])
+    mu_json = '{"mu": 0.2}'
+    mu_init_test = bridge.param_initialize(rng, mu_json)
+    np.testing.assert_approx_equal(theta_unc[0], mu_init_test[0])
+
+    sigma_dict = {"sigma": 1.9}
+    sigma_init_test = bridge.param_initialize(rng, sigma_dict)
+    np.testing.assert_approx_equal(theta_unc[1], sigma_init_test[1])
+
+    scratch = np.zeros(2)
+    theta_init = bridge.param_initialize(rng, out=scratch)
+    assert id(scratch) == id(theta_init)
+
+    scratch_bad = np.zeros(10)
+    with pytest.raises(ctypes.ArgumentError):
+        bridge.param_initialize(rng, out=scratch_bad)
+
+    with pytest.raises(RuntimeError):
+        bridge.param_initialize(rng, {"sigma": -1})
+
+
 def _log_jacobian(p):
     return np.log(p * (1 - p))
 

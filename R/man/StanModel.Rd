@@ -24,6 +24,7 @@ as well as constraining and unconstraining transforms.
 \item \href{#method-StanModel-new_rng}{\code{StanModel$new_rng()}}
 \item \href{#method-StanModel-param_unconstrain}{\code{StanModel$param_unconstrain()}}
 \item \href{#method-StanModel-param_unconstrain_json}{\code{StanModel$param_unconstrain_json()}}
+\item \href{#method-StanModel-param_initialize}{\code{StanModel$param_initialize()}}
 \item \href{#method-StanModel-log_density}{\code{StanModel$log_density()}}
 \item \href{#method-StanModel-log_density_gradient}{\code{StanModel$log_density_gradient()}}
 \item \href{#method-StanModel-log_density_hessian}{\code{StanModel$log_density_hessian()}}
@@ -278,6 +279,51 @@ The JSON is expected to be in the \href{https://mc-stan.org/docs/cmdstan-guide/j
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{json}}{Character vector containing a string representation of JSON data.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The unconstrained parameters of the model.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-StanModel-param_initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-StanModel-param_initialize}{}}}
+\subsection{Method \code{param_initialize()}}{
+Initialize a point in the unconstrained space, using the specified values
+from JSON and randomizing the others.
+
+Any parameter not specified in the provided JSON will be randomly selected
+uniformly from \verb{[-init_radius, init_radius)}. The resulting point will be
+checked for a finite log density value, and retried
+up to the specified number of times. If all such retries fail, an error is raised.
+
+The JSON is expected to be in the \href{https://mc-stan.org/docs/cmdstan-guide/json_apdx.html}{JSON Format for CmdStan}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{StanModel$param_initialize(
+  rng,
+  json = "{}",
+  init_radius = 2,
+  max_tries = 100,
+  jacobian = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{rng}}{The source of randomness for the unspecified parameters.}
+
+\item{\code{json}}{Character vector containing a string representation of JSON data.}
+
+\item{\code{init_radius}}{The parameters not provided will be drawn uniformly
+from \verb{[-init_radius, init_radius)} on the unconstrained scale.}
+
+\item{\code{max_tries}}{Maximum number of random initializations considered to find a
+point with finite log density.}
+
+\item{\code{jacobian}}{If \code{TRUE}, include change of variables terms for constrained
+parameters when checking the log density and gradient for finiteness.}
 }
 \if{html}{\out{</div>}}
 }
