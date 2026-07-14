@@ -107,13 +107,32 @@ function compile_model(
         `$(get_make()) $make_args "STANCFLAGS=--include-paths=. $stanc_args" $output_file`,
         dir = abspath(bridgestan),
     )
-    out = IOBuffer()
-    err = IOBuffer()
-    is_ok = success(pipeline(cmd; stdout = out, stderr = err))
-    if !is_ok
-        error(
-            "Compilation failed!\nCommand: $cmd\nstdout: $(String(take!(out)))\nstderr: $(String(take!(err)))",
-        )
+
+    # Redirect stdout/stderr to real files on disk rather than in-memory
+    # IOBuffers. Piping a subprocess's output to anything other than a file
+    # descriptor requires Julia to spawn an extra Task that relays bytes from
+    # an OS pipe into the buffer as they arrive. On Windows, that relay has
+    # been implicated in process-exit deadlocks (see JuliaLang/julia#59931),
+    # so we avoid it entirely by letting the OS write directly to files and
+    # only reading them back after the process has exited.
+    out_path, out_io = mktemp()
+    err_path, err_io = mktemp()
+    try
+        is_ok = try
+            success(pipeline(cmd; stdout = out_io, stderr = err_io))
+        finally
+            close(out_io)
+            close(err_io)
+        end
+
+        if !is_ok
+            error(
+                "Compilation failed!\nCommand: $cmd\nstdout: $(read(out_path, String))\nstderr: $(read(err_path, String))",
+            )
+        end
+    finally
+        rm(out_path; force = true)
+        rm(err_path; force = true)
     end
     return output_file
 end
