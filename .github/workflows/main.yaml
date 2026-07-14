@@ -207,7 +207,27 @@ jobs:
           julia --project=. -e "using Pkg; Pkg.instantiate()"
           julia --project=. -e "using BridgeStan"
 
-      - run: objdump -p test_models/bernoulli/bernoulli_model.so
+      # - run: objdump -p test_models/bernoulli/bernoulli_model.so
+
+      - name: Diagnose libwinpthread-1.dll versions
+        if: matrix.os == 'windows-latest'
+        run: |
+          Write-Host "--- julia.exe location ---"
+          $juliaPath = (Get-Command julia).Source
+          Write-Host $juliaPath
+
+          Write-Host "`n--- All libwinpthread-1.dll matches on PATH (search order) ---"
+          $matches = (where.exe libwinpthread-1.dll) -split "`r?`n" | Where-Object { $_ -ne "" }
+          foreach ($dll in $matches) {
+            Write-Host "`n=== $dll ==="
+            $exports = objdump -p $dll
+            if ($exports -match "clock_gettime64") {
+              Write-Host "HAS clock_gettime64"
+            } else {
+              Write-Host "MISSING clock_gettime64"
+            }
+          }
+
       - name: Run example
         timeout-minutes: 10
         run: |
