@@ -212,21 +212,42 @@ jobs:
       - name: Diagnose libwinpthread-1.dll versions
         if: matrix.os == 'windows-latest'
         run: |
-          Write-Host "--- julia.exe location ---"
-          $juliaPath = (Get-Command julia).Source
-          Write-Host $juliaPath
+          julia --project=julia/ -e '
+            using Libdl
+            println("PATH as seen by Julia:")
+            for dir in split(ENV["PATH"], ";")
+                println("  ", dir)
+            end
 
-          Write-Host "`n--- All libwinpthread-1.dll matches on PATH (search order) ---"
-          $matches = (where.exe libwinpthread-1.dll) -split "`r?`n" | Where-Object { $_ -ne "" }
-          foreach ($dll in $matches) {
-            Write-Host "`n=== $dll ==="
-            $exports = objdump -p $dll
-            if ($exports -match "clock_gettime64") {
-              Write-Host "HAS clock_gettime64"
-            } else {
-              Write-Host "MISSING clock_gettime64"
-            }
-          }
+            println()
+            println("--- Default dlopen(\"libwinpthread-1.dll\") resolution ---")
+            try
+                h = Libdl.dlopen("libwinpthread-1.dll")
+                println("Resolved to: ", Libdl.dlpath(h))
+                sym = Libdl.dlsym(h, :clock_gettime64; throw_error=false)
+                println("clock_gettime64 present: ", sym !== nothing && sym != C_NULL)
+                Libdl.dlclose(h)
+            catch e
+                println("Failed to dlopen: ", e)
+            end
+
+            println()
+            println("--- Every libwinpthread-1.dll found on PATH ---")
+            for dir in split(ENV["PATH"], ";")
+                candidate = joinpath(dir, "libwinpthread-1.dll")
+                if isfile(candidate)
+                    println("Found: ", candidate)
+                    try
+                        h = Libdl.dlopen(candidate)
+                        sym = Libdl.dlsym(h, :clock_gettime64; throw_error=false)
+                        println("  clock_gettime64 present: ", sym !== nothing && sym != C_NULL)
+                        Libdl.dlclose(h)
+                    catch e
+                        println("  Failed to dlopen: ", e)
+                    end
+                end
+            end
+          '
 
       - name: Run example
         timeout-minutes: 10
