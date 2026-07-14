@@ -1,0 +1,35 @@
+diff --git i/stan/src/stan/services/util/initialize.hpp w/stan/src/stan/services/util/initialize.hpp
+index c52c331b4..36c1fda96 100644
+--- i/stan/src/stan/services/util/initialize.hpp
++++ w/stan/src/stan/services/util/initialize.hpp
+@@ -8,7 +8,6 @@
+ #include <stan/io/chained_var_context.hpp>
+ #include <stan/model/log_prob_grad.hpp>
+ #include <stan/math/prim.hpp>
+-#include <chrono>
+ #include <sstream>
+ #include <string>
+ #include <vector>
+@@ -165,7 +164,7 @@ std::vector<double> initialize(Model& model, const InitContext& init, RNG& rng,
+     }
+     std::stringstream log_prob_msg;
+     std::vector<double> gradient;
+-    auto start = std::chrono::steady_clock::now();
++
+     try {
+       // we evaluate this with propto=true since we're
+       // evaluating with autodiff variables
+@@ -178,10 +177,8 @@ std::vector<double> initialize(Model& model, const InitContext& init, RNG& rng,
+       logger.error(e.what());
+       throw;
+     }
+-    auto end = std::chrono::steady_clock::now();
+-    double deltaT
+-        = std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+-              .count()
+-          / 1000000.0;
++
++    double deltaT = 0;
++
+     if (log_prob_msg.str().length() > 0)
+       logger.info(log_prob_msg);

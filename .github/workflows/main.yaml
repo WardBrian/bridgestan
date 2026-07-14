@@ -8,7 +8,7 @@ on:
   workflow_dispatch: {}
 
 env:
-  CACHE_VERSION: 1
+  CACHE_VERSION: 2
 
 # only run one copy per PR
 concurrency:
@@ -52,7 +52,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           submodules: recursive
-
+      - run: git apply out.patch
       - name: Stan build caching
         uses: actions/cache@v6
         id: stan-cache
@@ -180,7 +180,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           submodules: recursive
-
+      - run: git apply out.patch
       - name: Set up Julia
         uses: julia-actions/install-juliaup@v3
         with:
