@@ -160,5 +160,30 @@ function windows_dll_path_setup()
                 ENV["PATH"]
             WINDOWS_PATH_SET[] = tbb_found()
         end
+
+        # Compiled models also depend on the MinGW runtime (in particular
+        # libwinpthread-1.dll). Julia bundles its own copy of this DLL right
+        # next to julia.exe, and Windows' default DLL search order checks the
+        # running executable's own directory *before* %PATH% is ever
+        # consulted -- so Julia's bundled copy always wins regardless of
+        # %PATH% order, even if a newer, matching copy is available on
+        # %PATH%. If Julia's bundled copy is older than the toolchain used to
+        # compile the model, this can fail to resolve symbols the model
+        # actually needs (e.g. "the specified procedure could not be
+        # found"). Explicitly loading the copy found on %PATH% here registers
+        # it as the resolved module for that name, so later model loads reuse
+        # it instead of Julia's bundled one.
+        for dllname in ("libwinpthread-1.dll", "libgcc_s_seh-1.dll", "libstdc++-6.dll")
+            for dir in split(ENV["PATH"], ";")
+                candidate = joinpath(dir, dllname)
+                if isfile(candidate)
+                    try
+                        dlopen(candidate)
+                    catch
+                    end
+                    break
+                end
+            end
+        end
     end
 end
