@@ -107,32 +107,13 @@ function compile_model(
         `$(get_make()) $make_args "STANCFLAGS=--include-paths=. $stanc_args" $output_file`,
         dir = abspath(bridgestan),
     )
-
-    # Redirect stdout/stderr to real files on disk rather than in-memory
-    # IOBuffers. Piping a subprocess's output to anything other than a file
-    # descriptor requires Julia to spawn an extra Task that relays bytes from
-    # an OS pipe into the buffer as they arrive. On Windows, that relay has
-    # been implicated in process-exit deadlocks (see JuliaLang/julia#59931),
-    # so we avoid it entirely by letting the OS write directly to files and
-    # only reading them back after the process has exited.
-    out_path, out_io = mktemp()
-    err_path, err_io = mktemp()
-    try
-        is_ok = try
-            success(pipeline(cmd; stdout = out_io, stderr = err_io))
-        finally
-            close(out_io)
-            close(err_io)
-        end
-
-        if !is_ok
-            error(
-                "Compilation failed!\nCommand: $cmd\nstdout: $(read(out_path, String))\nstderr: $(read(err_path, String))",
-            )
-        end
-    finally
-        rm(out_path; force = true)
-        rm(err_path; force = true)
+    out = IOBuffer()
+    err = IOBuffer()
+    is_ok = success(pipeline(cmd; stdout = out, stderr = err))
+    if !is_ok
+        error(
+            "Compilation failed!\nCommand: $cmd\nstdout: $(String(take!(out)))\nstderr: $(String(take!(err)))",
+        )
     end
     return output_file
 end
@@ -159,31 +140,6 @@ function windows_dll_path_setup()
                 ";" *
                 ENV["PATH"]
             WINDOWS_PATH_SET[] = tbb_found()
-        end
-
-        # Compiled models also depend on the MinGW runtime (in particular
-        # libwinpthread-1.dll). Julia bundles its own copy of this DLL right
-        # next to julia.exe, and Windows' default DLL search order checks the
-        # running executable's own directory *before* %PATH% is ever
-        # consulted -- so Julia's bundled copy always wins regardless of
-        # %PATH% order, even if a newer, matching copy is available on
-        # %PATH%. If Julia's bundled copy is older than the toolchain used to
-        # compile the model, this can fail to resolve symbols the model
-        # actually needs (e.g. "the specified procedure could not be
-        # found"). Explicitly loading the copy found on %PATH% here registers
-        # it as the resolved module for that name, so later model loads reuse
-        # it instead of Julia's bundled one.
-        for dllname in ("libwinpthread-1.dll", "libgcc_s_seh-1.dll", "libstdc++-6.dll")
-            for dir in split(ENV["PATH"], ";")
-                candidate = joinpath(dir, dllname)
-                if isfile(candidate)
-                    try
-                        dlopen(candidate)
-                    catch
-                    end
-                    break
-                end
-            end
         end
     end
 end
