@@ -207,6 +207,7 @@ jobs:
           julia --project=. -e "using Pkg; Pkg.instantiate()"
           julia --project=. -e "using BridgeStan"
 
+      - run: objdump -p test_models/bernoulli/bernoulli_model.so
       - name: Run example
         timeout-minutes: 10
         run: |
